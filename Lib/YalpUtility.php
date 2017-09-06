@@ -135,15 +135,17 @@ class YalpUtility extends Object {
 	}
 
 	public function getUsers($ldapGroup = NULL, $ldapUser = NULL, $attributes = NULL, $sizelimit = 1000) {
-		// Add filter by group if avaible
-		$this->group_filter = preg_replace('/%GROUPNAME%/', $ldapGroup, $this->group_filter);
-		$filter = $this->group_filter;
-
+	    // Add filter by group if avaible
+	    if (isset($ldapGroup) && !empty($ldapGroup))
+	    {
+    		$this->group_filter = preg_replace('/%GROUPNAME%/', $ldapGroup, $this->group_filter);
+	        $filter = $this->group_filter;
+	    }
 		// Add filter by user if avaible
 		if (isset($ldapUser) && !empty($ldapUser))
 		{
 			$this->user_wide_filter = preg_replace('/%USERNAME%/', $ldapUser, $this->user_wide_filter);
-			$filter = '(& ' . $this->group_filter . $this->user_wide_filter . ' )';
+			$filter = '(& ' . $this->user_wide_filter . ' )';
 		}
 
 		// Override ldap attributes to get if avaible
@@ -167,6 +169,32 @@ class YalpUtility extends Object {
 		$ldapUsers = $this->_parseLDAPArray($ldapUsers);
 
 		return $ldapUsers;
+	}
+	
+	public function getUser($ldapUser) {
+	    $filter = preg_replace('/%USERNAME%/', $ldapUser, $this->user_filter);
+	    $sizelimit = 1000;
+	    // Override ldap attributes to get if avaible
+	    $attributes = $this->ldap_attribs;
+	
+	    // Connect to LDAP server and search for the user object
+	    $ldapConnection = $this->__ldapConnect();
+	
+	    // Suppress warning when no object found
+	    $results = ldap_search($ldapConnection, $this->base_dn, $filter, $attributes, 0, $sizelimit);
+	
+	    // Failed to find users details, not authenticated.
+	    if (!$results || ldap_count_entries($ldapConnection, $results) < 1) {
+	        CakeLog::write('yalp', "[YALPUtility->getUsers] Could not find users with selected criteria");
+	        return false;
+	    }
+	
+	    // Found the users! Get theirs details
+	    $ldapUsers = ldap_get_entries($ldapConnection, $results);
+	    // Parse array
+	    $ldapUsers = $this->_parseLDAPArray($ldapUsers);
+	
+	    return $ldapUsers;
 	}
 
 	private function _parseLDAPArray($data)

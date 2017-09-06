@@ -15,5 +15,12 @@
 	App::uses('CakeLog', 'Log');
 	App::uses('PhpReader', 'Configure');
 	
+	CakeLog::config('yalp', array(
+	    'engine' => 'FileLog',
+	    'types' => array('info'),
+	    'scopes' => array('yalp'),
+	    'file' => 'yalp',
+	));
+	
 	Configure::load('ldap');
 	

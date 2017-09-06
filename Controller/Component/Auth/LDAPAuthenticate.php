@@ -104,8 +104,16 @@ class LDAPAuthenticate extends BaseAuthenticate {
 
 		// If we couldn't find them in the database, create a new DB entry
 		if (empty($dbUser) || empty($dbUser[$model])) {
-			CakeLog::write('yalp', "[YALP.authenticate] Could not find a database entry for $username");
-			return false;
+			CakeLog::write('yalp', "[YALP.authenticate] Could not find a database entry for $username. Creating new user.");
+			
+			$user = $this->YALP->getUser($username);
+			ClassRegistry::init($userModel)->saveLdapUser($user[0], $username, $password);
+			
+			$dbUser = ClassRegistry::init($userModel)->find('first', array(
+			    'conditions' => $conditions,
+			    'recursive'	=> false
+			));
+
 		}
 
 		// Ensure there's nothing in the password field
